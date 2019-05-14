@@ -10,6 +10,7 @@ library(ggplot2)
 library(ggraph)
 library(tidygraph)
 library(stringr)
+
 library(haven)
 library(ggpubr)
 library(CINNA)
@@ -23,6 +24,8 @@ Coop_1 <- df_base.line %>%
 
 Coop_1$Trust <- cut(Coop_1$Coop_Union_Communication_TrustScale, breaks=c(0, 2, 4, 5), labels=c("Low", "Medium", "High"))
 
+
+#Creating Nodes----------------------------------------
 detach(package:plyr)
 
 Nodes1 <- Coop_1 %>% 
@@ -49,12 +52,12 @@ Nodes <- rbind.fill(Nodes1, Nodes2, Nodes3, Nodes4) %>%
 Nodes$Gender <- cut(Nodes$Qvi.Sex, breaks=c(-1, 0, 1), labels=c("Male","Female"), include.lowest = T)
 
 
-
+#Creating Edges -------------------------
 detach(package:plyr)
 Edges1 <- Coop_1 %>%
   filter(str_detect(Membertype, 'MEMBER')) %>% 
   select(Membertype, Q3.a.Firstperson) %>% 
-  cbind('Weight' = 3) %>% 
+  cbind('Weight' = 1) %>% 
   rename(From = Membertype, To=Q3.a.Firstperson)
 
 Edges2 <- Coop_1 %>%
@@ -66,20 +69,22 @@ Edges2 <- Coop_1 %>%
 Edges3 <- Coop_1 %>% 
   filter(str_detect(Membertype, 'MEMBER')) %>% 
   select(Membertype, Q3.c.thirdperson) %>% 
-  cbind('Weight' = 1) %>% 
+  cbind('Weight' = 3) %>% 
   rename(From = Membertype, To=Q3.c.thirdperson)
 
 Edges <- rbind(Edges1, Edges2, Edges3)
 
+
+#Creating Facet Graphs -----------------
 g<- graph_from_data_frame(d=Edges, vertices = Nodes)
 
 plot(g)
 
-
 ggraph(g) + 
   geom_edge_link( arrow = arrow(length = unit(0.25, "cm")))+
-  geom_node_point(aes(color = Trust, shape = Gender), size = 5) +
-  geom_node_text(aes(label = NA), size = 3)
+  geom_node_point(aes(color = Gender), size = 3) +
+  geom_node_text(aes(label = NA), size = 3)+
+  facet_wrap(~Weight)
 
 
 
